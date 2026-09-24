@@ -32,3 +32,29 @@ button.danger { background: #b4432f; border-color: #b4432f; color: #fff; }
 button:disabled { opacity: 0.5; cursor: default; }
 .muted { color: var(--muted); }
 .error { color: #b4432f; font-size: 13px; margin: 0; }
+input, select {
+  font: inherit;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: inherit;
+  min-width: 0;
+}
+.card { border: 1px solid var(--border); border-radius: 10px; padding: 16px; display: grid; gap: 16px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 4px 3px 10px; border: 1px solid var(--border); border-radius: 999px; font-size: 13px;
+}
+.chip:not(:has(.chip-x)) { padding-right: 10px; }
+.chip-x { border: 0; padding: 0 6px; line-height: 1; font-size: 15px; color: var(--muted); }
+.tag {
+  font-size: 11px; padding: 1px 6px; border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent);
+}
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); }
+.tabs button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; padding: 8px 12px; color: var(--muted); }
+.tabs button[aria-selected='true'] { color: var(--fg); border-bottom-color: var(--accent); }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.notice { padding: 10px 12px; border-radius: 8px; background: color-mix(in srgb, var(--accent) 10%, transparent); font-size: 14px; }
+code { font-size: 13px; }

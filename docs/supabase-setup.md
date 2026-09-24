@@ -17,12 +17,13 @@ OAuth redirect URL: `https://gdhfabadbkagblhlimnicelhnbkonddf.chromiumapp.org/`
 
 Either:
 
-- **SQL editor**: paste `supabase/migrations/20260924000000_init.sql` and run it, or
+- **SQL editor**: run each file in `supabase/migrations/` in filename order, or
 - **CLI**: `npx supabase login && npx supabase link --project-ref <ref> && npx supabase db push`
 
 Creates `profiles`, `focus_sessions`, `credit_events` (+ `credit_balances` view),
-`groups`, `group_members`, RLS policies, and the `create_group` / `join_group` /
-`group_leaderboard` RPCs.
+`groups` / `group_members`, `collectives` / `collective_admins` / `collective_groups`,
+`list_entries` (shared block/allow lists), RLS policies, and RPCs for creating/joining
+groups and collectives, roles, the weekly leaderboard, and `my_inherited_list_entries`.
 
 ## 3. Google OAuth client
 

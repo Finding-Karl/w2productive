@@ -1,9 +1,12 @@
+import type { PersonalLists } from './core/lists';
+
 /** Messages from UI pages to the service worker. */
 export type Message =
   | { type: 'session/start'; minutes: number }
   | { type: 'session/stop' }
   | { type: 'session/blockHit' }
-  | { type: 'sync/now' };
+  | { type: 'sync/now' }
+  | { type: 'lists/update'; patch: Partial<PersonalLists> };
 
 export type Reply = { ok: true } | { ok: false; error: string };
 

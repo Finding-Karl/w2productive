@@ -21,6 +21,11 @@ export function hostMatches(host: string, domain: string): boolean {
 /** Always reachable in allowlist mode so the user can't lock themselves out of local dev. */
 export const ALWAYS_ALLOWED = ['localhost', '127.0.0.1'];
 
+/**
+ * Effective (already merged) lists. Semantics:
+ *  - blocklist applies in BOTH modes, and always beats the allowlist.
+ *  - allowlist only matters in allowlist mode, where anything not on it is blocked.
+ */
 export interface ListConfig {
   listMode: 'blocklist' | 'allowlist';
   blocklist: string[];
@@ -37,6 +42,7 @@ export function isUrlBlocked(url: string, cfg: ListConfig): boolean {
   }
   if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
   const host = parsed.hostname.toLowerCase();
-  if (cfg.listMode === 'blocklist') return cfg.blocklist.some((d) => hostMatches(host, d));
+  if (cfg.blocklist.some((d) => hostMatches(host, d))) return true;
+  if (cfg.listMode === 'blocklist') return false;
   return ![...cfg.allowlist, ...ALWAYS_ALLOWED].some((d) => hostMatches(host, d));
 }

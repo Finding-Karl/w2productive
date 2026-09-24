@@ -1,6 +1,8 @@
 import { isUrlBlocked, type ListConfig } from '@/src/core/domain';
 import { buildBlockRules, RULE_IDS } from '@/src/core/rules';
+import { effectiveLists } from '@/src/core/lists';
 import { settingsItem } from '@/src/storage/settings';
+import { activeSessionItem, inheritedListsItem } from '@/src/storage/state';
 
 const OUR_RULE_IDS: number[] = Object.values(RULE_IDS);
 
@@ -8,9 +10,15 @@ function blockedPageUrl() {
   return browser.runtime.getURL('/blocked.html');
 }
 
+/** Personal lists merged with everything inherited from groups and collectives. */
 async function listConfig(): Promise<ListConfig> {
-  const { listMode, blocklist, allowlist } = await settingsItem.getValue();
-  return { listMode, blocklist, allowlist };
+  const [settings, inherited] = await Promise.all([settingsItem.getValue(), inheritedListsItem.getValue()]);
+  return effectiveLists(settings, inherited.entries);
+}
+
+/** Re-apply rules if they're currently on (e.g. a group list changed mid-session). */
+export async function refreshBlockingIfActive(): Promise<void> {
+  if (await activeSessionItem.getValue()) await setBlocking(true);
 }
 
 /**

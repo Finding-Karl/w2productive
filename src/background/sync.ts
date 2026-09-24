@@ -2,7 +2,9 @@ import { fromCreditEventRow, fromFocusSessionRow, maxCreatedAt, pullSince, toCre
   toFocusSessionRow, type CreditEventRow, type FocusSessionRow } from '@/src/core/rows';
 import { supabase } from '@/src/lib/supabase';
 import { creditLedgerItem, sessionLogItem, syncStateItem } from '@/src/storage/state';
+import type { InheritedEntry } from '@/src/core/lists';
 import { applySyncResult } from './ledger';
+import { setInheritedEntries } from './lists';
 import { serialized } from './queue';
 
 export const SYNC_ALARM = 'sync';
@@ -73,6 +75,21 @@ async function runSync(): Promise<void> {
           focusSessions: maxCreatedAt(sessionRows, cursors.focusSessions),
         },
       }),
+    );
+
+    // Group & collective lists: small, so refetch the whole set every time. Done after the
+    // ledger merge so a failure here can't hold back credit sync.
+    const { data: inherited, error: listsError } = await supabase.rpc('my_inherited_list_entries');
+    if (listsError) throw listsError;
+    await setInheritedEntries(
+      (inherited as { source: InheritedEntry['source']; source_id: string; source_name: string;
+        list: InheritedEntry['list']; domain: string }[]).map((r) => ({
+        source: r.source,
+        sourceId: r.source_id,
+        sourceName: r.source_name,
+        list: r.list,
+        domain: r.domain,
+      })),
     );
   } catch (e) {
     const message = (e as { message?: string })?.message ?? String(e);
