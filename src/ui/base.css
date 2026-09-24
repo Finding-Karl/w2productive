@@ -28,3 +28,7 @@ button {
   cursor: pointer;
 }
 button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.danger { background: #b4432f; border-color: #b4432f; color: #fff; }
+button:disabled { opacity: 0.5; cursor: default; }
+.muted { color: var(--muted); }
+.error { color: #b4432f; font-size: 13px; margin: 0; }

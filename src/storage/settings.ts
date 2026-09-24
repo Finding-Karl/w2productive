@@ -10,8 +10,8 @@ export interface Settings {
   allowlist: string[];
   /** Minutes of credit earned per 60 minutes of focus. */
   earnMinutesPerHour: number;
-  /** Sessions shorter than this earn nothing. */
-  minSessionMinutes: number;
+  /** Ending early earns nothing until this % of the planned length is focused. */
+  minSessionPercent: number;
   sessionPresets: number[]; // minutes
   rolloverHour: number; // 0–23, local time
   vault: {
@@ -27,8 +27,8 @@ export const DEFAULT_SETTINGS: Settings = {
   blocklist: ['youtube.com', 'reddit.com', 'x.com', 'twitter.com', 'instagram.com', 'tiktok.com'],
   allowlist: [],
   earnMinutesPerHour: 20,
-  minSessionMinutes: 10,
-  sessionPresets: [25, 50],
+  minSessionPercent: 50,
+  sessionPresets: [10, 30, 60, 90, 120],
   rolloverHour: 4,
   vault: { rolloverPercent: 100, maxMinutes: null, dailyWithdrawLimitMinutes: null },
 };
