@@ -7,7 +7,9 @@ export function clock(totalSeconds: number): string {
   return h ? `${h}:${String(m).padStart(2, '0')}:${sec}` : `${m}:${sec}`;
 }
 
-/** Seconds -> "12 min" (floored). */
+/** Credit amounts: 20 -> "20 sec", 750 -> "12 min" (floored), 0 -> "0 min". */
 export function minutes(totalSeconds: number): string {
-  return `${Math.floor(totalSeconds / 60)} min`;
+  const s = Math.floor(totalSeconds);
+  if (s > 0 && s < 60) return `${s} sec`;
+  return `${Math.floor(s / 60)} min`;
 }

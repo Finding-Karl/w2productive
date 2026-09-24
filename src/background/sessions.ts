@@ -1,22 +1,12 @@
 import { finishSession, startSession } from '@/src/core/session';
 import { settingsItem } from '@/src/storage/settings';
-import { activeSessionItem, creditItem, sessionLogItem } from '@/src/storage/state';
+import { activeSessionItem } from '@/src/storage/state';
 import { setBlocking } from './blocking';
+import { backfillLedger, recordFinishedSession } from './ledger';
+import { serialized } from './queue';
+import { requestSync } from './sync';
 
 export const SESSION_END_ALARM = 'session-end';
-
-/**
- * Serialize state mutations. The alarm and a Stop click can land at the same moment;
- * without this both could read the same active session and award credit twice.
- * (A promise chain in memory is fine here: it only orders work within one worker
- * lifetime — no state lives in it.)
- */
-let queue: Promise<unknown> = Promise.resolve();
-function serialized<T>(fn: () => Promise<T>): Promise<T> {
-  const run = queue.then(fn, fn);
-  queue = run.catch(() => {});
-  return run;
-}
 
 export const start = (minutes: number) =>
   serialized(async () => {
@@ -36,18 +26,11 @@ export const finish = () =>
     const now = Date.now();
     const record = finishSession(active, now, settings, settings.rolloverHour);
 
-    const log = await sessionLogItem.getValue();
-    const credit = await creditItem.getValue();
-    await sessionLogItem.setValue([...log, record]);
-    await creditItem.setValue({
-      balanceSeconds: credit.balanceSeconds + record.creditEarnedSeconds,
-      updatedAt: now,
-    });
-    await activeSessionItem.setValue(null);
+    await recordFinishedSession(record); // also clears the active session
     await browser.alarms.clear(SESSION_END_ALARM);
     await setBlocking(false);
     console.log('[focus] session finished', record);
-  });
+  }).then(() => void requestSync());
 
 export const recordBlockHit = () =>
   serialized(async () => {
@@ -60,6 +43,7 @@ export const recordBlockHit = () =>
  * alarms can be lost on update/reinstall and the browser may have been closed past endsAt.
  */
 export async function reconcile(): Promise<void> {
+  await serialized(backfillLedger);
   const active = await activeSessionItem.getValue();
   if (!active) {
     await setBlocking(false);

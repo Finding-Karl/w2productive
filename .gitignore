@@ -3,3 +3,6 @@ node_modules
 .wxt
 *.log
 .DS_Store
+keys/
+.env
+.env.local
