@@ -13,3 +13,13 @@ export function minutes(totalSeconds: number): string {
   if (s > 0 && s < 60) return `${s} sec`;
   return `${Math.floor(s / 60)} min`;
 }
+
+/** Focus time: 8100 -> "2h 15m", 2700 -> "45m", 30 -> "<1m", 0 -> "0m". */
+export function hm(totalSeconds: number): string {
+  const s = Math.floor(totalSeconds);
+  if (s <= 0) return '0m';
+  if (s < 60) return '<1m';
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  return h ? (m ? `${h}h ${m}m` : `${h}h`) : `${m}m`;
+}
