@@ -31,6 +31,11 @@ describe('isUrlBlocked', () => {
     expect(isUrlBlocked('https://www.reddit.com/r/x', block)).toBe(true);
     expect(isUrlBlocked('https://github.com', block)).toBe(false);
   });
+  it('blocklist entries apply in allowlist mode too, and beat allows', () => {
+    const both = { listMode: 'allowlist' as const, blocklist: ['gist.github.com'], allowlist: ['github.com'] };
+    expect(isUrlBlocked('https://github.com', both)).toBe(false);
+    expect(isUrlBlocked('https://gist.github.com', both)).toBe(true);
+  });
   it('allowlist blocks everything else, but never localhost', () => {
     expect(isUrlBlocked('https://gist.github.com', allow)).toBe(false);
     expect(isUrlBlocked('https://reddit.com', allow)).toBe(true);

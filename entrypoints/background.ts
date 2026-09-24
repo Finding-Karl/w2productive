@@ -1,6 +1,9 @@
 import type { Message, Reply } from '@/src/messages';
 import { finish, reconcile, recordBlockHit, SESSION_END_ALARM, start } from '@/src/background/sessions';
 import { requestSync, SYNC_ALARM, SYNC_PERIOD_MINUTES } from '@/src/background/sync';
+import { setInheritedEntries, updatePersonalLists } from '@/src/background/lists';
+
+const AUTH_STORAGE_KEY = 'supabaseAuth'; // see src/lib/supabase.ts
 
 export default defineBackground(() => {
   // MV3: this worker is killed after ~30s idle. Listeners must be registered synchronously
@@ -18,6 +21,14 @@ export default defineBackground(() => {
   browser.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === SESSION_END_ALARM) void finish();
     if (alarm.name === SYNC_ALARM) void requestSync();
+  });
+
+  // Sign-in/out happens on the options page; the worker reacts via storage.
+  browser.storage.onChanged.addListener((changes, area) => {
+    const auth = changes[AUTH_STORAGE_KEY];
+    if (area !== 'local' || !auth) return;
+    if (auth.oldValue && !auth.newValue) void setInheritedEntries([]); // signed out: group lists stop applying
+    if (!auth.oldValue && auth.newValue) void requestSync(); // signed in
   });
 
   browser.runtime.onMessage.addListener((msg: Message, _sender, sendResponse) => {
@@ -39,5 +50,7 @@ async function handle(msg: Message): Promise<void> {
       return recordBlockHit();
     case 'sync/now':
       return requestSync();
+    case 'lists/update':
+      return updatePersonalLists(msg.patch);
   }
 }

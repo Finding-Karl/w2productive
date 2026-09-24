@@ -1,5 +1,6 @@
 import { storage } from '#imports';
 import type { CreditEvent } from '@/src/core/ledger';
+import type { InheritedEntry } from '@/src/core/lists';
 import type { ActiveSession, SessionRecord } from '@/src/core/session';
 
 /** The running session, or null. Timestamps only — elapsed time is always computed. */
@@ -57,3 +58,12 @@ export const syncStateItem = storage.defineItem<SyncState>('local:sync', {
   },
   version: 1,
 });
+
+/**
+ * Block/allow entries inherited from the user's groups and collectives, cached from the
+ * server so enforcement works offline. Replaced wholesale on each sync; cleared on sign-out.
+ */
+export const inheritedListsItem = storage.defineItem<{
+  entries: InheritedEntry[];
+  fetchedAt: number | null;
+}>('local:inheritedLists', { fallback: { entries: [], fetchedAt: null }, version: 1 });
