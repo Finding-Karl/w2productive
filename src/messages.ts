@@ -2,7 +2,8 @@
 export type Message =
   | { type: 'session/start'; minutes: number }
   | { type: 'session/stop' }
-  | { type: 'session/blockHit' };
+  | { type: 'session/blockHit' }
+  | { type: 'sync/now' };
 
 export type Reply = { ok: true } | { ok: false; error: string };
 

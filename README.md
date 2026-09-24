@@ -33,3 +33,8 @@ src/
   storage/         typed, versioned chrome.storage items
   ui/              shared styles/components
 ```
+
+## Backend (optional)
+
+Sync and Google sign-in use Supabase. Setup: [docs/supabase-setup.md](docs/supabase-setup.md).
+Without a `.env`, the extension runs fully local.
