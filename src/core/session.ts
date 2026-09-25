@@ -1,4 +1,5 @@
 import { toDayKey, type DayKey } from './dayKey';
+import type { DeepFocusState } from './deepFocus';
 
 export const MIN_SESSION_MINUTES = 1;
 export const MAX_SESSION_MINUTES = 240;
@@ -10,7 +11,14 @@ export interface ActiveSession {
   plannedMinutes: number;
   /** Times the block page was hit during this session (stat only; doesn't break it). */
   blockHits: number;
+  /** Absent on sessions started before session types existed = standard. */
+  type?: SessionType;
+  deep?: DeepFocusState;
 }
+
+export type SessionType = 'standard' | 'deep';
+/** Why a session ended. 'missed_check' = deep focus presence check not answered in time. */
+export type EndReason = 'completed' | 'stopped' | 'missed_check';
 
 /** completed = ran to endsAt; ended_early = stopped from popup or given up on block page. */
 export type SessionOutcome = 'completed' | 'ended_early';
@@ -26,6 +34,8 @@ export interface SessionRecord {
   creditEarnedSeconds: number;
   blockHits: number;
   updatedAt: number; // for future sync
+  sessionType?: SessionType; // absent = standard (pre-deep-focus records)
+  endReason?: EndReason;
 }
 
 export interface CreditRules {
@@ -39,11 +49,16 @@ export function minimumSeconds(plannedMinutes: number, rules: CreditRules): numb
   return Math.ceil((plannedMinutes * 60 * rules.minSessionPercent) / 100);
 }
 
-export function startSession(id: string, now: number, minutes: number): ActiveSession {
+export function startSession(
+  id: string,
+  now: number,
+  minutes: number,
+  type: SessionType = 'standard',
+): ActiveSession {
   if (!Number.isInteger(minutes) || minutes < MIN_SESSION_MINUTES || minutes > MAX_SESSION_MINUTES) {
     throw new Error(`Session length must be ${MIN_SESSION_MINUTES}–${MAX_SESSION_MINUTES} minutes`);
   }
-  return { id, startedAt: now, endsAt: now + minutes * 60_000, plannedMinutes: minutes, blockHits: 0 };
+  return { id, startedAt: now, endsAt: now + minutes * 60_000, plannedMinutes: minutes, blockHits: 0, type };
 }
 
 /** Credit (in seconds) for a stretch of focus. Below the session's minimum earns nothing. */
@@ -61,6 +76,7 @@ export function finishSession(
   now: number,
   rules: CreditRules,
   rolloverHour: number,
+  reason: Exclude<EndReason, 'completed'> = 'stopped',
 ): SessionRecord {
   const completed = now >= s.endsAt;
   const endedAt = completed ? s.endsAt : Math.max(now, s.startedAt);
@@ -76,5 +92,7 @@ export function finishSession(
     creditEarnedSeconds: creditFor(focusedSeconds, s.plannedMinutes, rules),
     blockHits: s.blockHits,
     updatedAt: now,
+    sessionType: s.type ?? 'standard',
+    endReason: completed ? 'completed' : reason,
   };
 }

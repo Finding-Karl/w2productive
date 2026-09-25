@@ -7,6 +7,7 @@ export interface MemberRow {
   avatar_url: string | null;
   role: 'owner' | 'admin' | 'member';
   focus_seconds: number;
+  deep_focus_seconds: number;
   sessions: number;
 }
 export interface GroupRow {
@@ -14,6 +15,7 @@ export interface GroupRow {
   group_name: string;
   members: number;
   focus_seconds: number;
+  deep_focus_seconds: number;
   sessions: number;
 }
 export interface ActivityRow {
@@ -47,13 +49,14 @@ function num<T extends object>(rows: T[], keys: (keyof T)[]): T[] {
 export const groupLeaderboard = async (groupId: string, r: Range) =>
   num(await rpc<MemberRow[]>('group_leaderboard', { p_group_id: groupId, p_from: r.from, p_to: r.to }), [
     'focus_seconds',
+    'deep_focus_seconds',
     'sessions',
   ]);
 
 export const collectiveLeaderboard = async (collectiveId: string, r: Range) =>
   num(
     await rpc<GroupRow[]>('collective_leaderboard', { p_collective_id: collectiveId, p_from: r.from, p_to: r.to }),
-    ['members', 'focus_seconds', 'sessions'],
+    ['members', 'focus_seconds', 'deep_focus_seconds', 'sessions'],
   );
 
 export const profileActivity = async (userId: string, from: DayKey, to: DayKey) =>

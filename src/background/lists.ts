@@ -1,7 +1,8 @@
 import { normalizeDomain } from '@/src/core/domain';
 import { inheritedKey, type InheritedEntry, type PersonalLists } from '@/src/core/lists';
 import { settingsItem } from '@/src/storage/settings';
-import { activeSessionItem, inheritedListsItem } from '@/src/storage/state';
+import { DEEP_FOCUS_LIMITS, type DeepFocusParams, type InheritedDeepFocusRule } from '@/src/core/deepFocus';
+import { activeSessionItem, inheritedDeepFocusItem, inheritedListsItem } from '@/src/storage/state';
 import { refreshBlockingIfActive } from './blocking';
 import { serialized } from './queue';
 
@@ -32,12 +33,30 @@ export const updatePersonalLists = (patch: ListsPatch) =>
     });
   });
 
-/** Replace the inherited cache; re-applies rules mid-session only if something changed. */
-export async function setInheritedEntries(entries: InheritedEntry[]): Promise<void> {
+/**
+ * Replace the inherited caches (lists + deep focus rules). Re-applies blocking mid-session
+ * only if the lists changed; deep focus rules are captured at session start, so a change
+ * applies from the next session.
+ */
+export async function setInheritedEntries(entries: InheritedEntry[], deepFocusRules: InheritedDeepFocusRule[]): Promise<void> {
   const changed = await serialized(async () => {
     const current = await inheritedListsItem.getValue();
     await inheritedListsItem.setValue({ entries, fetchedAt: Date.now() });
+    await inheritedDeepFocusItem.setValue({ rules: deepFocusRules, fetchedAt: Date.now() });
     return inheritedKey(current.entries) !== inheritedKey(entries);
   });
   if (changed) await refreshBlockingIfActive();
 }
+
+/** Personal deep focus defaults (validated to the same bounds moderators get). */
+export const updateDeepFocusDefaults = (p: DeepFocusParams) =>
+  serialized(async () => {
+    const [gLo, gHi] = DEEP_FOCUS_LIMITS.graceSeconds;
+    const [mLo, mHi] = DEEP_FOCUS_LIMITS.minutes;
+    const ok = (v: number, lo: number, hi: number) => Number.isInteger(v) && v >= lo && v <= hi;
+    if (!ok(p.graceSeconds, gLo, gHi)) throw new Error(`Grace window must be ${gLo}–${gHi} seconds`);
+    if (!ok(p.minMinutes, mLo, mHi) || !ok(p.maxMinutes, mLo, mHi)) throw new Error(`Check window must be ${mLo}–${mHi} minutes`);
+    if (p.minMinutes > p.maxMinutes) throw new Error('The earliest check can’t be later than the latest');
+    const settings = await settingsItem.getValue();
+    await settingsItem.setValue({ ...settings, deepFocus: p });
+  });

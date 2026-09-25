@@ -1,5 +1,6 @@
 import { storage } from '#imports';
 import type { CreditEvent } from '@/src/core/ledger';
+import type { InheritedDeepFocusRule } from '@/src/core/deepFocus';
 import type { InheritedEntry } from '@/src/core/lists';
 import type { ActiveSession, SessionRecord } from '@/src/core/session';
 
@@ -67,3 +68,9 @@ export const inheritedListsItem = storage.defineItem<{
   entries: InheritedEntry[];
   fetchedAt: number | null;
 }>('local:inheritedLists', { fallback: { entries: [], fetchedAt: null }, version: 1 });
+
+/** Deep focus rules set by your group and its collectives (cached; refreshed on sync). */
+export const inheritedDeepFocusItem = storage.defineItem<{
+  rules: InheritedDeepFocusRule[];
+  fetchedAt: number | null;
+}>('local:inheritedDeepFocus', { fallback: { rules: [], fetchedAt: null }, version: 1 });
