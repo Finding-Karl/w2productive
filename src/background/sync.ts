@@ -77,18 +77,31 @@ async function runSync(): Promise<void> {
       }),
     );
 
-    // Group & collective lists: small, so refetch the whole set every time. Done after the
-    // ledger merge so a failure here can't hold back credit sync.
-    const { data: inherited, error: listsError } = await supabase.rpc('my_inherited_list_entries');
-    if (listsError) throw listsError;
+    // Group & collective lists and deep focus rules: small, so refetch the whole set every
+    // time. Done after the ledger merge so a failure here can't hold back credit sync.
+    const [lists, deep] = await Promise.all([
+      supabase.rpc('my_inherited_list_entries'),
+      supabase.rpc('my_deep_focus_rules'),
+    ]);
+    if (lists.error) throw lists.error;
+    if (deep.error) throw deep.error;
     await setInheritedEntries(
-      (inherited as { source: InheritedEntry['source']; source_id: string; source_name: string;
+      (lists.data as { source: InheritedEntry['source']; source_id: string; source_name: string;
         list: InheritedEntry['list']; domain: string }[]).map((r) => ({
         source: r.source,
         sourceId: r.source_id,
         sourceName: r.source_name,
         list: r.list,
         domain: r.domain,
+      })),
+      (deep.data as { source: 'group' | 'collective'; source_id: string; source_name: string;
+        grace_seconds: number | null; min_minutes: number | null; max_minutes: number | null }[]).map((r) => ({
+        source: r.source,
+        sourceId: r.source_id,
+        sourceName: r.source_name,
+        graceSeconds: r.grace_seconds,
+        minMinutes: r.min_minutes,
+        maxMinutes: r.max_minutes,
       })),
     );
   } catch (e) {

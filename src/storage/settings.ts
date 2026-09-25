@@ -1,4 +1,5 @@
 import { storage } from '#imports';
+import { DEEP_FOCUS_DEFAULTS, type DeepFocusParams } from '@/src/core/deepFocus';
 
 export type EnforcementMode = 'normal' | 'hardcore';
 export type ListMode = 'blocklist' | 'allowlist';
@@ -19,6 +20,8 @@ export interface Settings {
     maxMinutes: number | null; // null = unlimited
     dailyWithdrawLimitMinutes: number | null;
   };
+  /** Your defaults for deep focus checks. Your group/collectives can only make them stricter. */
+  deepFocus: DeepFocusParams;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -31,6 +34,7 @@ export const DEFAULT_SETTINGS: Settings = {
   sessionPresets: [10, 30, 60, 90, 120],
   rolloverHour: 4,
   vault: { rolloverPercent: 100, maxMinutes: null, dailyWithdrawLimitMinutes: null },
+  deepFocus: DEEP_FOCUS_DEFAULTS,
 };
 
 /**
@@ -39,5 +43,9 @@ export const DEFAULT_SETTINGS: Settings = {
  */
 export const settingsItem = storage.defineItem<Settings>('local:settings', {
   fallback: DEFAULT_SETTINGS,
-  version: 1,
+  version: 2,
+  migrations: {
+    // v2: deep focus defaults. Fill anything missing from defaults so older saves stay valid.
+    2: (old: Partial<Settings>): Settings => ({ ...DEFAULT_SETTINGS, ...old, deepFocus: old.deepFocus ?? DEEP_FOCUS_DEFAULTS }),
+  },
 });

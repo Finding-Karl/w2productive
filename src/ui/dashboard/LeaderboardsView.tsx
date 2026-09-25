@@ -97,6 +97,7 @@ function GroupBoard({ groupId, range, me, compact }: { groupId: string; range: R
           <th>Member</th>
           <th className="barcell" aria-hidden />
           <th className="num">Focus</th>
+          <th className="num" title="Time in deep focus sessions">Deep</th>
           <th className="num">Sessions</th>
         </tr>
       </thead>
@@ -110,6 +111,7 @@ function GroupBoard({ groupId, range, me, compact }: { groupId: string; range: R
             </td>
             <td className="barcell"><div className="bar" style={{ width: `${(r.focus_seconds / max) * 100}%`, opacity: r.focus_seconds ? 1 : 0 }} /></td>
             <td className="num">{hm(r.focus_seconds)}</td>
+            <td className="num muted">{r.deep_focus_seconds ? hm(r.deep_focus_seconds) : '–'}</td>
             <td className="num muted">{r.sessions}</td>
           </tr>
         ))}
@@ -132,6 +134,7 @@ function CollectiveBoard({ collectiveId, range, me }: { collectiveId: string; ra
           <th>Group</th>
           <th className="barcell" aria-hidden />
           <th className="num">Focus</th>
+          <th className="num" title="Time in deep focus sessions">Deep</th>
           <th className="num">Per member</th>
           <th className="num">Members</th>
         </tr>
@@ -147,13 +150,14 @@ function CollectiveBoard({ collectiveId, range, me }: { collectiveId: string; ra
               </td>
               <td className="barcell"><div className="bar" style={{ width: `${(r.focus_seconds / max) * 100}%`, opacity: r.focus_seconds ? 1 : 0 }} /></td>
               <td className="num">{hm(r.focus_seconds)}</td>
+              <td className="num muted">{r.deep_focus_seconds ? hm(r.deep_focus_seconds) : '–'}</td>
               <td className="num">{hm(r.members ? r.focus_seconds / r.members : 0)}</td>
               <td className="num muted">{r.members}</td>
             </tr>
             {open === r.group_id && (
               <tr>
                 <td />
-                <td colSpan={5} style={{ padding: '4px 0 12px' }}>
+                <td colSpan={6} style={{ padding: '4px 0 12px' }}>
                   <GroupBoard groupId={r.group_id} range={range} me={me} compact />
                 </td>
               </tr>

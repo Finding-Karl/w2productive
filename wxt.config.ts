@@ -17,6 +17,7 @@ export default defineConfig({
       'idle',
       'declarativeNetRequest',
       'identity', // launchWebAuthFlow for Google sign-in
+      'scripting', // inject the presence overlay into tabs opened before the extension loaded
     ],
     // Needed so DNR can redirect arbitrary sites to our block page.
     host_permissions: ['<all_urls>'],

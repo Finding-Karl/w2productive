@@ -11,9 +11,15 @@ function blockedPageUrl() {
 }
 
 /** Personal lists merged with everything inherited from groups and collectives. */
-async function listConfig(): Promise<ListConfig> {
-  const [settings, inherited] = await Promise.all([settingsItem.getValue(), inheritedListsItem.getValue()]);
-  return effectiveLists(settings, inherited.entries);
+export async function currentListConfig(): Promise<ListConfig> {
+  const [settings, inherited, active] = await Promise.all([
+    settingsItem.getValue(),
+    inheritedListsItem.getValue(),
+    activeSessionItem.getValue(),
+  ]);
+  // Deep focus sessions are allowlist-only, whatever your usual mode is.
+  const listMode = active?.type === 'deep' ? 'allowlist' : settings.listMode;
+  return effectiveLists({ ...settings, listMode }, inherited.entries);
 }
 
 /** Re-apply rules if they're currently on (e.g. a group list changed mid-session). */
@@ -26,7 +32,7 @@ export async function refreshBlockingIfActive(): Promise<void> {
  * idempotent and safe to call from reconcile() whenever the worker wakes.
  */
 export async function setBlocking(enabled: boolean): Promise<void> {
-  const cfg = await listConfig();
+  const cfg = await currentListConfig();
   const existing = await browser.declarativeNetRequest.getDynamicRules();
   await browser.declarativeNetRequest.updateDynamicRules({
     removeRuleIds: existing.map((r) => r.id).filter((id) => OUR_RULE_IDS.includes(id)),

@@ -110,7 +110,11 @@ function DayDetail(props: { day: DayKey; total?: DayTotal; sessions: SessionReco
               <tr key={s.id}>
                 <td>{time(s.startedAt)}–{time(s.endedAt)}</td>
                 <td>
-                  {s.plannedMinutes} min {s.outcome === 'ended_early' && <span className="muted">(ended early)</span>}
+                  {s.plannedMinutes} min
+                  {s.sessionType === 'deep' && <span className="tag" style={{ marginLeft: 6 }}>deep</span>}
+                  {s.outcome === 'ended_early' && (
+                    <span className="muted"> ({s.endReason === 'missed_check' ? 'missed a check' : 'ended early'})</span>
+                  )}
                 </td>
                 <td className="num">{hm(s.focusedSeconds)}</td>
                 <td className="num">{minutes(s.creditEarnedSeconds)}</td>

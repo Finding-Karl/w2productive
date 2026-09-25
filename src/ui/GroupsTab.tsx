@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import type { ListKind } from '@/src/core/lists';
 import {
-  addEntry, createCollective, createGroup, joinCollective, joinGroup, leaveGroup, loadGroupsData,
-  removeEntry, removeGroupFromCollective, setGroupRole, type Collective, type Entry, type Group,
-  type GroupsData, type ListOwner,
+  addEntry, createCollective, createGroup, deleteGroup, joinCollective, joinGroup, leaveGroup, loadGroupsData,
+  removeEntry, removeGroupFromCollective, setDeepFocusRules, setGroupRole, type Collective, type DeepFocusRuleColumns,
+  type Entry, type Group, type GroupsData, type ListOwner,
 } from '@/src/lib/groups';
+import { ConfirmButton } from './ConfirmButton';
+import { DeepFocusRulesEditor } from './DeepFocusRulesEditor';
 import { send } from '@/src/messages';
 import { ListEditor } from './ListEditor';
 import { useAuthUser } from './useAuthUser';
@@ -65,15 +67,30 @@ export function GroupsTab() {
       />
     ));
 
+  const rulesEditor = (kind: 'group' | 'collective', id: string, row: DeepFocusRuleColumns, editable: boolean) => (
+    <DeepFocusRulesEditor
+      key={`${id}:${row.deep_focus_grace_seconds}:${row.deep_focus_check_min_minutes}:${row.deep_focus_check_max_minutes}`}
+      title="Deep focus checks"
+      hint={editable ? 'Applies to every member’s deep focus sessions (strictest across group and collectives wins). Leave blank to not set.' : undefined}
+      value={{ grace: row.deep_focus_grace_seconds, min: row.deep_focus_check_min_minutes, max: row.deep_focus_check_max_minutes }}
+      editable={editable}
+      onSave={(v) => mutate(() => setDeepFocusRules(kind, id, v))}
+    />
+  );
+
   return (
     <div style={{ display: 'grid', gap: 32 }}>
       <section style={{ display: 'grid', gap: 12 }}>
-        <h2 style={{ margin: 0, fontSize: 18 }}>Groups</h2>
-        <div className="row">
-          <InlineForm placeholder="New group name" button="Create group" onSubmit={(v) => mutate(() => createGroup(v))} />
-          <InlineForm placeholder="Invite code" button="Join group" onSubmit={(v) => mutate(() => joinGroup(v))} />
-        </div>
-        {data.groups.length === 0 && <p className="muted">You’re not in any groups yet.</p>}
+        <h2 style={{ margin: 0, fontSize: 18 }}>Your group</h2>
+        {data.groups.length === 0 && (
+          <>
+            <p className="muted" style={{ margin: 0 }}>You can be in one group at a time.</p>
+            <div className="row">
+              <InlineForm placeholder="New group name" button="Create group" onSubmit={(v) => mutate(() => createGroup(v))} />
+              <InlineForm placeholder="Invite code" button="Join group" onSubmit={(v) => mutate(() => joinGroup(v))} />
+            </div>
+          </>
+        )}
         {data.groups.map((g) => (
           <GroupCard
             key={g.id}
@@ -84,8 +101,10 @@ export function GroupsTab() {
             isOwner={g.owner_id === user.id}
             onRole={(uid, role) => mutate(() => setGroupRole(g.id, uid, role))}
             onLeave={() => mutate(() => leaveGroup(g.id, user.id))}
+            onDelete={() => mutate(() => deleteGroup(g.id))}
           >
             {listEditors({ group_id: g.id }, data.entries.filter((e) => e.group_id === g.id), isGroupAdmin(g.id))}
+            {rulesEditor('group', g.id, g, isGroupAdmin(g.id))}
           </GroupCard>
         ))}
       </section>
@@ -105,6 +124,7 @@ export function GroupsTab() {
           return (
             <CollectiveCard key={c.id} collective={c} isAdmin={isCollectiveAdmin(c.id)} groupNames={groupsIn.map((g) => g.group_name)}>
               {listEditors({ collective_id: c.id }, data.entries.filter((e) => e.collective_id === c.id), isCollectiveAdmin(c.id))}
+              {rulesEditor('collective', c.id, c, isCollectiveAdmin(c.id))}
               <div className="row">
                 {groupsIn
                   .filter((cg) => isGroupAdmin(cg.group_id))
@@ -130,6 +150,7 @@ function GroupCard(props: {
   isOwner: boolean;
   onRole: (uid: string, role: 'admin' | 'member') => Promise<unknown>;
   onLeave: () => Promise<unknown>;
+  onDelete: () => Promise<unknown>;
   children: React.ReactNode;
 }) {
   const { group, role, members, name, isOwner } = props;
@@ -157,11 +178,18 @@ function GroupCard(props: {
         ))}
       </div>
       {props.children}
-      {!isOwner && (
-        <div>
+      <div>
+        {isOwner ? (
+          <ConfirmButton
+            label="Delete group"
+            confirmLabel="Yes, delete it"
+            hint="Removes the group for everyone, along with its lists and collective memberships. Owners can’t leave, so this is how you switch groups."
+            onConfirm={props.onDelete}
+          />
+        ) : (
           <button onClick={props.onLeave}>Leave group</button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

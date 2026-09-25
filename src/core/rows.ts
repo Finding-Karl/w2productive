@@ -1,5 +1,5 @@
 import type { CreditEvent, CreditEventKind } from './ledger';
-import type { SessionOutcome, SessionRecord } from './session';
+import type { EndReason, SessionOutcome, SessionRecord, SessionType } from './session';
 
 /** Row shapes of the Supabase tables (see supabase/migrations). snake_case, ISO timestamps. */
 export interface CreditEventRow {
@@ -23,6 +23,8 @@ export interface FocusSessionRow {
   credit_earned_seconds: number;
   block_hits: number;
   hardcore: boolean;
+  session_type: SessionType;
+  end_reason: EndReason | null;
   updated_at: string;
   created_at?: string; // server-assigned
 }
@@ -64,6 +66,8 @@ export function toFocusSessionRow(s: SessionRecord): FocusSessionRow {
     credit_earned_seconds: s.creditEarnedSeconds,
     block_hits: s.blockHits,
     hardcore: false, // hardcore mode not built yet
+    session_type: s.sessionType ?? 'standard',
+    end_reason: s.endReason ?? null,
     updated_at: iso(s.updatedAt),
   };
 }
@@ -80,6 +84,8 @@ export function fromFocusSessionRow(r: FocusSessionRow): SessionRecord {
     creditEarnedSeconds: r.credit_earned_seconds,
     blockHits: r.block_hits,
     updatedAt: ms(r.updated_at),
+    sessionType: r.session_type ?? 'standard',
+    ...(r.end_reason ? { endReason: r.end_reason } : {}),
   };
 }
 
